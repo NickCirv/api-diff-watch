@@ -1,0 +1,38 @@
+{
+  "name": "api-diff-watch",
+  "version": "1.0.0",
+  "description": "Watch API endpoints, alert when responses change. Diff JSON. Zero dependencies.",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "api-diff-watch": "./index.js",
+    "adw": "./index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "developer-tools",
+    "cli",
+    "nodejs",
+    "zero-dependencies",
+    "api",
+    "monitoring",
+    "diff",
+    "watch"
+  ],
+  "author": "NickCirv",
+  "license": "MIT",
+  "files": [
+    "index.js",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NickCirv/api-diff-watch.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NickCirv/api-diff-watch/issues"
+  },
+  "homepage": "https://github.com/NickCirv/api-diff-watch#readme"
+}
