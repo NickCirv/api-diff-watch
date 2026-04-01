@@ -1,3 +1,5 @@
+![Banner](banner.svg)
+
 # api-diff-watch
 
 > Watch API endpoints. Alert when responses change. Zero dependencies.
