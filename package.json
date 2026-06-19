@@ -23,6 +23,9 @@
   ],
   "author": "NickCirv",
   "license": "MIT",
+  "scripts": {
+    "test": "node --test"
+  },
   "files": [
     "index.js",
     "README.md"
