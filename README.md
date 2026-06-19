@@ -1,127 +1,67 @@
-![Banner](banner.svg)
+<div align="center">
 
 # api-diff-watch
 
-> Watch API endpoints. Alert when responses change. Zero dependencies.
+**Watch API endpoints and get alerted the moment responses change — structured JSON diffs, zero dependencies.**
 
-```
-⚡ Change detected at 14:32:05
-  ~ /data/users/0/email: "old@email.com" → "new@email.com"
-  ~ /data/meta/count: 42 → 43
-  + /data/meta/updatedAt (new field)
-```
+[![License: MIT](https://img.shields.io/badge/License-MIT-0B0A09?style=flat-square&logo=opensourceinitiative&logoColor=white)](LICENSE)
+[![Node >=18](https://img.shields.io/badge/Node-%3E%3D18-0B0A09?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org)
+
+</div>
 
 ## Install
 
 ```bash
-# Run directly with npx (no install needed)
-npx api-diff-watch <url> [options]
+# Run directly — no install needed
+npx github:NickCirv/api-diff-watch <url> [options]
 
 # Or install globally
-npm install -g api-diff-watch
+npm install -g github:NickCirv/api-diff-watch
 ```
 
-## Quick Start
+## Usage
 
 ```bash
-# Watch an endpoint every 30s
+# Watch an endpoint every 30 s (default)
 adw https://api.example.com/users
 
-# Watch every 60s
-adw https://api.example.com/users --interval 60
+# Watch every 60 s, with an auth header read from env
+adw https://api.example.com/me --interval 60 --header "Authorization: Bearer $API_TOKEN"
 
-# Authenticated endpoint — reads from env, never logs the value
-adw https://api.example.com/me --header "Authorization: Bearer $API_TOKEN"
-
-# Only alert when the JSON schema changes (new/removed fields)
+# Alert only when the JSON schema changes (new / removed fields)
 adw https://api.example.com/data --schema-only
 
-# Watch a specific JSON path
-adw https://api.example.com/feed --jq ".data.items"
+# Watch a specific JSON path and ignore noisy timestamp fields
+adw https://api.example.com/feed --jq ".data.items" --ignore ".timestamp,.requestId"
 
-# Ignore noisy fields like timestamps
-adw https://api.example.com/status --ignore ".timestamp,.requestId"
-
-# POST request
-adw https://api.graphql.com/graphql --method POST --body '{"query":"{ users { id } }"}'
-
-# Run a command when something changes
-adw https://api.example.com/data --on-change "npm run sync"
-
-# Log all changes to a file
-adw https://api.example.com/feed --log changes.json
-
-# One-shot: compare to saved baseline, exit 0 (no change) or 1 (changed)
-adw https://api.example.com/status --once
+# One-shot CI check: exit 0 = no change, exit 1 = changed
+adw https://api.example.com/schema --once --schema-only
 ```
-
-## Options
 
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--interval <sec>` | `30` | Poll interval in seconds |
-| `--header <Name: value>` | — | Add request header. Supports `$ENV_VAR` for secrets |
+| `--header <Name: value>` | — | Add a request header; `$ENV_VAR` references are resolved silently |
 | `--method <METHOD>` | `GET` | HTTP method |
-| `--body <json>` | — | Request body for POST/PUT |
+| `--body <json>` | — | Request body for POST / PUT |
 | `--jq <path>` | — | Watch a specific JSON path (e.g. `.data.users`) |
 | `--ignore <fields>` | — | Comma-separated fields to skip (e.g. `.timestamp,.id`) |
-| `--schema-only` | `false` | Only alert on schema changes, not value changes |
+| `--schema-only` | `false` | Alert only on structural changes, not value changes |
 | `--timeout <ms>` | `10000` | Per-request timeout |
-| `--on-change <cmd>` | — | Run command on change (no shell — safe from injection) |
+| `--on-change <cmd>` | — | Run a command when a change is detected (no shell, safe from injection) |
 | `--log <file>` | — | Append all changes to a JSON file |
-| `--once` | `false` | Fetch once, compare to baseline, exit 0/1 |
+| `--once` | `false` | Fetch once, compare to baseline, exit 0 / 1 |
 
-## How It Works
+## What it does
 
-1. **First run** — fetches the endpoint and saves a baseline to `.adw-baseline/` (MD5 hash + pretty JSON)
-2. **Subsequent runs** — compares the new response to the baseline
-3. **Change detected** — prints a structured diff and updates the baseline
-4. **No change** — prints timestamp + response time and continues
-
-### Change Output Format
+On first run, `api-diff-watch` fetches the endpoint and saves a baseline (MD5 hash + pretty JSON) to `.adw-baseline/`. On every subsequent poll it compares the live response to that baseline and prints a structured diff only when something changes — coloured by type (yellow = changed, green = added, red = removed). Non-JSON responses get a unified text diff. The `--once` flag makes it useful in CI pipelines: exit code 1 signals a regression.
 
 ```
 ⚡ Change detected at 14:32:05
-  ~ /data/users/0/email: "old@email.com" → "new@email.com"   ← yellow: changed
-  + /data/meta/updatedAt (new field)                          ← green:  added
-  - /data/legacy/token (removed)                              ← red:    removed
+  ~ /data/users/0/email: "old@email.com" → "new@email.com"
+  + /data/meta/updatedAt (new field)
+  - /data/legacy/token (removed)
 ```
-
-For non-JSON responses, a unified diff is shown instead.
-
-### Schema-Only Mode
-
-`--schema-only` only alerts when the structure of the JSON changes — new or removed keys, not value changes. Useful for API versioning surveillance.
-
-### Security
-
-- Secrets in `--header` are read from `process.env` and **never logged or echoed**
-- `--on-change` uses `spawnSync` (no shell) — no command injection possible
-- No network calls except to the URL you specify
-- Baselines stored locally in `.adw-baseline/`
-
-## CI / Scripting
-
-Use `--once` in scripts or CI pipelines:
-
-```bash
-# Exit 1 if the API response changed since last run
-adw https://api.example.com/schema --once --schema-only
-echo $?  # 0 = no change, 1 = changed
-```
-
-## Why?
-
-- No bloated monitoring platforms for simple "did this endpoint change?" checks
-- Zero npm dependencies — nothing to audit, nothing to update, nothing to break
-- Works in CI, Docker, cron jobs — no daemon required
-- Schema-only mode catches API breaking changes before your code does
-
-## Requirements
-
-- Node.js 18+
-- No external dependencies
 
 ---
-
-Built with Node.js · Zero dependencies · MIT License
+<sub>Zero dependencies · Node >=18 · MIT · by <a href="https://github.com/NickCirv">NickCirv</a></sub>
