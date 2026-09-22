@@ -1,67 +1,78 @@
-<div align="center">
+![Nicholas Ashkar — api-diff-watch](assets/nicholas-ashkar/banner.png)
 
 # api-diff-watch
 
-**Watch API endpoints and get alerted the moment responses change — structured JSON diffs, zero dependencies.**
+Polls an HTTP endpoint and compares responses against a saved baseline.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-0B0A09?style=flat-square&logo=opensourceinitiative&logoColor=white)](LICENSE)
-[![Node >=18](https://img.shields.io/badge/Node-%3E%3D18-0B0A09?style=flat-square&logo=nodedotjs&logoColor=white)](https://nodejs.org)
 
-</div>
 
-## Install
 
-```bash
-# Run directly — no install needed
-npx github:NickCirv/api-diff-watch <url> [options]
 
-# Or install globally
-npm install -g github:NickCirv/api-diff-watch
-```
+<a id="usage"></a>
 
-## Usage
+<a id="watch-an-endpoint-every-30-s-default"></a>
 
-```bash
-# Watch an endpoint every 30 s (default)
-adw https://api.example.com/users
+<a id="watch-every-60-s-with-an-auth-header-read-from-env"></a>
 
-# Watch every 60 s, with an auth header read from env
-adw https://api.example.com/me --interval 60 --header "Authorization: Bearer $API_TOKEN"
-
-# Alert only when the JSON schema changes (new / removed fields)
-adw https://api.example.com/data --schema-only
-
-# Watch a specific JSON path and ignore noisy timestamp fields
-adw https://api.example.com/feed --jq ".data.items" --ignore ".timestamp,.requestId"
-
-# One-shot CI check: exit 0 = no change, exit 1 = changed
-adw https://api.example.com/schema --once --schema-only
-```
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--interval <sec>` | `30` | Poll interval in seconds |
-| `--header <Name: value>` | — | Add a request header; `$ENV_VAR` references are resolved silently |
-| `--method <METHOD>` | `GET` | HTTP method |
-| `--body <json>` | — | Request body for POST / PUT |
-| `--jq <path>` | — | Watch a specific JSON path (e.g. `.data.users`) |
-| `--ignore <fields>` | — | Comma-separated fields to skip (e.g. `.timestamp,.id`) |
-| `--schema-only` | `false` | Alert only on structural changes, not value changes |
-| `--timeout <ms>` | `10000` | Per-request timeout |
-| `--on-change <cmd>` | — | Run a command when a change is detected (no shell, safe from injection) |
-| `--log <file>` | — | Append all changes to a JSON file |
-| `--once` | `false` | Fetch once, compare to baseline, exit 0 / 1 |
+<a id="alert-only-when-the-json-schema-changes-new--removed-fields"></a>
 
 ## What it does
 
-On first run, `api-diff-watch` fetches the endpoint and saves a baseline (MD5 hash + pretty JSON) to `.adw-baseline/`. On every subsequent poll it compares the live response to that baseline and prints a structured diff only when something changes — coloured by type (yellow = changed, green = added, red = removed). Non-JSON responses get a unified text diff. The `--once` flag makes it useful in CI pipelines: exit code 1 signals a regression.
+- JSON-path selection.
+- Ignored fields and schema-only mode.
+- Request headers and timeouts.
+- Optional change log.
 
-```
-⚡ Change detected at 14:32:05
-  ~ /data/users/0/email: "old@email.com" → "new@email.com"
-  + /data/meta/updatedAt (new field)
-  - /data/legacy/token (removed)
+
+
+
+<a id="install"></a>
+
+<a id="run-directly--no-install-needed"></a>
+
+<a id="or-install-globally"></a>
+
+## Quickstart
+
+Prerequisites: Node.js `>=18` and npm. The checkout below pins the source used for this documentation.
+
+```sh
+git clone https://github.com/NickCirv/api-diff-watch.git
+cd api-diff-watch
+git checkout efc00a00457e390bdb3ed023f272ab97e5efba34
+node index.js http://localhost:3000/status --once
 ```
 
----
-<sub>Zero dependencies · Node >=18 · MIT · by <a href="https://github.com/NickCirv">NickCirv</a></sub>
+**Expected behavior (illustrative, not captured):** Against a running local service, saves a first baseline or compares with an existing one; a changed comparison exits 1.
+
+Examples are source-inspected, **not runtime-tested**. See the research record for verification gaps.
+
+## Boundaries and data
+
+Baselines persist locally and can include response data. --on-change launches a command using space-split arguments, not a shell. Polling observes snapshots and can miss changes between requests.
+
+For continuous polling, always specify `--interval 30` (or another deliberate value). The current omitted-flag default is interpreted as milliseconds despite help text describing seconds; see [polling-default defect](docs/REFERENCE.md#polling-default-defect).
+
+
+
+<a id="watch-a-specific-json-path-and-ignore-noisy-timestamp-fields"></a>
+
+<a id="one-shot-ci-check-exit-0--no-change-exit-1--changed"></a>
+
+## Development
+
+The manifest defines `npm test` as:
+
+```sh
+node --test
+```
+
+The captured suite is a smoke check, not end-to-end behavior coverage. Examples include “entry is valid JavaScript”, “--help exits 0”. Tests were not run for this documentation revision.
+
+See [implementation and command reference](docs/REFERENCE.md) for the package scripts and inspected interfaces, and [research record](docs/RESEARCH.md) for the pinned source, document decisions and unresolved checks.
+
+## License and contact
+
+See [LICENSE](LICENSE) for the original terms and attribution. Legal text is unchanged.
+
+[Nicholas Ashkar](https://nicholashkar.com/) · [Discuss a project](https://nicholashkar.com/#oxblood-contact)
